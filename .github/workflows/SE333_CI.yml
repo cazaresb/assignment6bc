@@ -1,0 +1,77 @@
+name: SE333_CI
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "assignment6bc/**"
+      - ".github/workflows/SE333_CI.yml"
+  pull_request:
+    branches: ["se333_assign5"]
+    paths:
+      - "SE333/Assignment5_Code/**"
+      - ".github/workflows/SE333_CI.yml"
+
+jobs:
+  SE333_CI_JOB:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: assignment6bc
+
+    steps:
+      - name: checkout-repo
+        uses: actions/checkout@v4
+
+      - name: setupJava
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          architecture: x64
+
+      - name: Install Linter
+        run: |
+          CS_VER=10.15.0
+          echo "Using Checkstyle $CS_VER"
+          wget -q "https://github.com/checkstyle/checkstyle/releases/download/checkstyle-${CS_VER}/checkstyle-${CS_VER}-all.jar" -O checkstyle.jar
+          curl -sSL "https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-${CS_VER}/src/main/resources/google_checks.xml" -o google_checks.xml
+          ls -lh checkstyle.jar google_checks.xml
+
+      # Run Checkstyle (keep job green on violations)
+      - name: Run Checkstyle
+        run: |
+          mkdir -p target
+          # Optional: build explicit file list if you want to be extra safe
+          # find src/main/java -type f -name '*.java' > checkstyle-files.txt
+          # FILES="$(cat checkstyle-files.txt)"
+          java -jar checkstyle.jar \
+            -c google_checks.xml \
+            -f xml \
+            -o target/checkstyle-result.xml \
+            src/main/java || true
+          echo "Report size:"
+          wc -c target/checkstyle-result.xml || true
+          head -n 20 target/checkstyle-result.xml || true
+
+      - name: Upload Checkstyle Result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkstyle-result.xml
+          path: SE333/Assignment5_Code/target/checkstyle-result.xml
+          if-no-files-found: warn
+
+      - name: Run Maven Test
+        run: mvn -B -U -fae test
+
+      - name: Jacoco Report
+        run: mvn -B -U -fae verify
+
+      - name: Upload Jacoco Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco.xml
+          path: SE333/Assignment5_Code/target/site/jacoco/jacoco.xml
+          if-no-files-found: warn
