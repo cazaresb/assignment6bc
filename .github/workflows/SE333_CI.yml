@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: checkstyle-result.xml
-          path: SE333/Assignment5_Code/target/checkstyle-result.xml
+          path: assignment6bc/target/checkstyle-result.xml
           if-no-files-found: warn
 
       - name: Run Maven Test
@@ -73,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: jacoco.xml
-          path: SE333/Assignment5_Code/target/site/jacoco/jacoco.xml
+          path: assignment6bc/target/site/jacoco/jacoco.xml
           if-no-files-found: warn
